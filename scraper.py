@@ -4,21 +4,26 @@ import re
 
 from bs4 import BeautifulSoup
 from pprint import pprint as pp
+
+FOLDER_REGEX = re.compile('\/webapps\/blackboard\/content\/listContent\.jsp\?course_id=([^&]*)&content_id=([^&]*)')
 COURSE_NAME = 'Linear Programming, Modelling and Solution'
 LEARN_URL = 'https://www.learn.ed.ac.uk'
 
 ALL_FOLDERS = set()
 
-def get_folders_from_page(page_link, course_id, s):
-    ALL_FOLDERS.add(page_link)
-    result = s.get(LEARN_URL + page_link)
+def get_folders_from_page(page_link, s):
+    s.header = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'}
+    result = s.get(page_link)
+    result.close()
+    ALL_FOLDERS.add(result.url)
     soup = BeautifulSoup(result.text, 'lxml')
-    folders_links = soup.find_all('a', href=re.compile('\/webapps\/blackboard\/content\/listContent\.jsp\?course_id={}&content_id=.*'.format(course_id)))
+    folders_links = soup.find_all('a', href=FOLDER_REGEX)
     for folder in folders_links:
+        folder = LEARN_URL + FOLDER_REGEX.match(folder.get('href').strip()).group(0)
         if folder in ALL_FOLDERS:
             continue
         else:
-            get_folders_from_page(folder.get('href').strip(), course_id, s)
+            get_folders_from_page(folder, s)
 
 
 
@@ -42,10 +47,8 @@ with requests.Session() as s:
 
     # Finding the course that we want 
     course_link = soup.find('a', string=re.compile(COURSE_NAME + '.*')).get('href').strip()
-    course_id = re.compile('(?:\/webapps\/blackboard\/execute\/launcher\?type=Course&id=)(.*)&(?:.*)').search(course_link).group(1)
-   
 
-    get_folders_from_page(course_link, course_id, s)
+    get_folders_from_page(LEARN_URL + course_link, s)
 
     pp(list(ALL_FOLDERS))
     print(len(list(ALL_FOLDERS)))
