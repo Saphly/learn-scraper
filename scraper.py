@@ -39,14 +39,13 @@ def get_folder_infos_from_page(page_link, s, breadcrumb):
 
 with requests.Session() as s:
     # Logging in to Learn via EASE.
-    response = s.get('https://www.ease.ed.ac.uk/cosign.cgi')
+    response = s.get(EASE_URL)
     cookies = dict(response.cookies)
     loginfo = {'login': config.login,
                'password': config.password,
                'ref': LEARN_URL + '/cgi-bin/login.cgi',
                'service': 'cosign-eucsCosign-www.learn.ed.ac.uk'}
-    response = s.post('https://www.ease.ed.ac.uk/cosign.cgi',
-                      data=loginfo, cookies=cookies)
+    response = s.post(EASE_URL, data=loginfo, cookies=cookies)
     # Load course module tabs, which is populated dynamically.
     data = {'action': 'refreshAjaxModule',
             'modId': '_4_1',
