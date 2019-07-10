@@ -1,4 +1,5 @@
 import config
+import os
 import re
 import requests
 
@@ -62,31 +63,22 @@ with requests.Session() as s:
     course_link = LEARN_URL + course_html.get('href').strip()
     get_folder_infos_from_page(course_link, s, (course_title,))
 
-    pp(list(FOLDER_INFOS))
-    pp(len(list(FOLDER_INFOS)))
+    # pp(list(FOLDER_INFOS))
+    # pp(len(list(FOLDER_INFOS)))
 
-    # ##############
-    # r = s.get(LEARN_URL + course_link)
-    # course_url = r.url
-    # soup = BeautifulSoup(r.text, 'lxml')
-    # # Check if there's pdf on the front page and download it
-    # content_links = soup.find_all('a', href=re.compile('\/bbcswebdav\/.*'))
-    # for content_link in content_links:
-    #     r = s.get(LEARN_URL + content_link.get('href'))
-    #     content_name = r.url.split('/')[-1]
-    #     with open(content_name, 'wb') as f:
-    #         f.write(r.content)
+    for folder_path, folder_link in FOLDER_INFOS:
+        dir_path = '/'.join(folder_path)
+        os.makedirs(dir_path, exist_ok=True)
+        r = s.get(folder_link)
+        soup = BeautifulSoup(r.text, 'lxml')
+        content_links = soup.find_all('a', href=re.compile('\/bbcswebdav\/.*'))
+        for content_link in content_links:
+            r = s.get(LEARN_URL + content_link.get('href'))
+            content_name = r.url.split('/')[-1]
+            with open(dir_path + '/' + content_name, 'wb') as f:
+                f.write(r.content)
 
-    # # Access folder and download pdf
-    # dir_links = soup.find_all('a', href=re.compile('\/webapps\/blackboard\/content\/listContent\.jsp\?course_id={}&content_id=.*'.format(course_id)))
-    # for dir_link in dir_links:
-    #     # To avoid getting into a loop of reloading the page
-    #     if course_url not in LEARN_URL + dir_link.get('href'):
-    #         #print(dir_link.get('href'))
-    #         #while
-    #         r = s.get(LEARN_URL + dir_link.get('href'))
-    #         soup = BeautifulSoup(r.text, 'lxml')
-    #         #while
+
     #         content_links = soup.find_all('a', href=re.compile('\/bbcswebdav\/.*'))
     #         #print('{}: \n {} \n\n'.format(dir_link, content_links))
     #         # for content_link in content_links:
