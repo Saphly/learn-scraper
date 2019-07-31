@@ -11,7 +11,9 @@ CONTENT_REGEX = re.compile('\/bbcswebdav\/.*')
 COURSE_NAME = 'Linear Programming, Modelling and Solution'
 EASE_URL = 'https://www.ease.ed.ac.uk/cosign.cgi'
 FOLDER_REGEX = re.compile(
-    '\/webapps\/blackboard\/content\/listContent\.jsp\?course_id=([^&]*)&content_id=([^&]*)')
+    '\/webapps\/blackboard\/content\/listContent\.jsp\?course_id=' +
+    '([^&]*)&content_id=([^&]*)'
+)
 LEARN_URL = 'https://www.learn.ed.ac.uk'
 
 
@@ -40,13 +42,29 @@ def get_folder_infos_from_page(page_link, s, breadcrumb):
 
 with requests.Session() as s:
     # Logging in to Learn via EASE.
-    response = s.get(EASE_URL)
-    cookies = dict(response.cookies)
+    response = s.get(
+        LEARN_URL + '/auth-saml/saml/login', params={'apId': '_175_1'})
+    soup = BeautifulSoup(response.text, 'lxml')
+    form_url = soup.find('form').get('action')
+    saml_request = soup.find('input').get('value')
+
+    response = s.post(form_url, data={'SAMLRequest': saml_request})
+    soup = BeautifulSoup(response.text, 'lxml')
+    login_form = soup.find('form', attrs={'method': 'post'})
     loginfo = {'login': config.login,
-               'password': config.password,
-               'ref': LEARN_URL + '/cgi-bin/login.cgi',
-               'service': 'cosign-eucsCosign-www.learn.ed.ac.uk'}
-    response = s.post(EASE_URL, data=loginfo, cookies=cookies)
+               'password': config.password}
+    for key in ['submit', 'ref', 'service']:
+        loginfo[key] = login_form.findChild(
+            'input', attrs={'name': key}).get('value')
+    form_url = login_form.get('action')
+
+    response = s.post(EASE_URL + form_url, data=loginfo)
+    soup = BeautifulSoup(response.text, 'lxml')
+    form_url = soup.find('form').get('action')
+    saml_response = soup.find('input').get('value')
+
+    response = s.post(form_url, data={'SAMLResponse': saml_response})
+
     # Load course module tabs, which is populated dynamically.
     data = {'action': 'refreshAjaxModule',
             'modId': '_4_1',
@@ -63,8 +81,8 @@ with requests.Session() as s:
     course_link = LEARN_URL + course_html.get('href').strip()
     get_folder_infos_from_page(course_link, s, (course_title,))
 
-    # pp(list(FOLDER_INFOS))
-    # pp(len(list(FOLDER_INFOS)))
+    pp(list(FOLDER_INFOS))
+    pp(len(list(FOLDER_INFOS)))
 
     for folder_path, folder_link in FOLDER_INFOS:
         dir_path = '/'.join(folder_path)
@@ -77,12 +95,3 @@ with requests.Session() as s:
             content_name = r.url.split('/')[-1]
             with open(dir_path + '/' + content_name, 'wb') as f:
                 f.write(r.content)
-
-
-    #         content_links = soup.find_all('a', href=re.compile('\/bbcswebdav\/.*'))
-    #         #print('{}: \n {} \n\n'.format(dir_link, content_links))
-    #         # for content_link in content_links:
-    #         #     r = s.get(LEARN_URL + content_link.get('href'))
-    #         #     content_name = r.url.split('/')[-1]
-    #         #     with open(content_name, 'wb') as f:
-    #         #         f.write(r.content)
