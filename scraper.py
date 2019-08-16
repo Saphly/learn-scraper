@@ -131,7 +131,9 @@ def send_request(s, url, method='GET', raise_on_error=True, **kwargs):
     return r
 
 
-with requests.Session() as s:
+def scrape():
+    s = requests.Session()
+
     start = time.time()
 
     # logging in to Learn via EASE
@@ -160,7 +162,6 @@ with requests.Session() as s:
     start = time.time()
 
     for course in COURSE_INFOS:
-        title = course.string
         url = LEARN_URL + course.get('href').strip()
         get_folder_infos(url, s)
 
@@ -189,3 +190,5 @@ with requests.Session() as s:
         'Downloaded %s files in %ss',
         len(CONTENT_INFOS), time.time() - start
     )
+
+    s.close()
