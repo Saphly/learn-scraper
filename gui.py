@@ -43,7 +43,6 @@ for x in range(100):
 scrollbar = tk.Scrollbar(frame_list, orient="vertical")
 scrollbar.config(command=frame_list.yview)
 scrollbar.pack(side="right", fill="y")
-
 frame_list.config(yscrollcommand=scrollbar.set)
 
 username = tk.StringVar()
@@ -62,7 +61,7 @@ username_entry.pack(side='left')
 input_pw.pack(side='left')
 pw_entry.pack(side='left', padx=4)
 
-button_start = tk.Button(bottom_frame, text='Enter', command = run_app, fg='dark green', relief='raised', width=10, font=('Helvetica 9 bold'))
+button_start = tk.Button(bottom_frame, text='Enter', command = run_app, cursor='heart', fg='dark green', relief='raised', width=10, font=('Helvetica 9 bold'))
 button_start.grid(column=0, row=0, sticky='w', padx=50, pady=2)
 
 button_end = tk.Button(bottom_frame, text='Exit', command = close_app, fg='dark red', relief='raised', width=10, font=('Helvetica 9 bold'))
