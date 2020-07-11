@@ -1,0 +1,17 @@
+import re
+import logging
+
+USERNAME = ""
+PASSWORD = ""
+DOWNLOAD_DIR = "/path/to/directory"
+
+CONTENT_REGEX = re.compile(r"/bbcswebdav/.*")
+COURSE_REGEX = re.compile(
+    r"\/webapps\/blackboard\/execute\/launcher\?type=Course&id=[^&]*&url=[^&]*"
+)
+FOLDER_REGEX = re.compile(
+    r"\/webapps\/blackboard\/content\/listContent.jsp\?course_id=[^&]*&content_id=[^&]*"
+)
+
+LOG_LEVEL = logging.DEBUG
+LOG_FORMAT = "%(asctime)s %(name)-12s %(levelname)-8s %(message)s"
