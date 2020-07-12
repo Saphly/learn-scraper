@@ -12,18 +12,30 @@ Download all files from all courses enrolled as a student in [Learn](https://www
 
 # Configuration
 
-* Copy `config.py.template` and rename it as `config.py`.
+* Copy `config.py.template` and rename it as `config.py`: ```cp config.py.template config.py```
 
-* Replace placeholder values with user-specific ones.
+* Replace placeholder values in `config.py` with user-specific ones.
 
 # Usage
 
-* Run the following command: ```python scraper.py```.
+* Login to [Learn](https://www.learn.ed.ac.uk) via your browser.
+
+* Click on the `Manage Course List` button, as shown below: 
+
+![Manage Course List button on Learn](docs/manage_course_list.png)
+
+* Under the `TERMS` tab, tick all `Select All/Unselect All` checkboxes, as shown below:
+
+![Ticking all Select All/Unselect All checkboxes](docs/select_all_terms.png)`
+
+* Scroll down to the `Courses in which you are enrolled` tab, and tick *at least* one checkbox for each course whose materials you wish to bulk download. For example:
+
+![Ticking at least one checkbox per course](docs/enrolled_courses.png)
+
+* Click the `Submit` button on the bottom-right corner to finalise your changes.
+
+* `cd` into the repo (if you're not there already), and run the following command: ```python scraper.py```.
 
 # Troubleshooting
 
-* TBD
-
-# Caveats
-
-* TBD
+* If the above command doesn't work and you're seeing `ModuleNotFoundError`, try ```pipenv run python scraper.py``` instead.
