@@ -281,7 +281,7 @@ def main():
     ):
         ls.save_cache()
 
-    # ls.download_all()
+    ls.download_all()
 
 
 if __name__ == "__main__":
