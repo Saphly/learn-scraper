@@ -8,7 +8,7 @@ DOWNLOAD_DIR = "/path/to/directory"
 USE_CACHE = True
 CACHE_DIR = "/path/to/directory"
 
-TIMEOUT = 3600
+TIMEOUT = 60
 
 CONTENT_REGEX = re.compile(r"/bbcswebdav/.*")
 COURSE_REGEX = re.compile(
