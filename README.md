@@ -38,4 +38,10 @@ Download all files from all courses enrolled as a student in [Learn](https://www
 
 # Troubleshooting
 
-* If the above command doesn't work and you're seeing `ModuleNotFoundError`, try ```pipenv run python scraper.py``` instead.
+## `ModuleNotFoundError`
+
+* If the above command doesn't work, try ```pipenv run python scraper.py``` instead.
+
+## `command not found: pipenv`
+
+* ```pip install --user pipenv``` installs `pipenv` under `$HOME/.local/bin` by default, so make sure this is in your `$PATH`. See [here](https://opensource.com/article/17/6/set-path-linux) for more details.
