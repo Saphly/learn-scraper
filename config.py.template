@@ -3,12 +3,16 @@ import logging
 
 USERNAME = ""
 PASSWORD = ""
-DOWNLOAD_DIR = "/path/to/directory"
+
+DOWNLOAD_DIR = "/absolute/path/to/directory" # No trailing slash
 
 USE_CACHE = True
-CACHE_DIR = "/path/to/directory"
+CACHE_DIR = "/absolute/path/to/directory" # No trailing slash
 
-TIMEOUT = 60
+TIMEOUT = 60 # how long to wait (in secs) before skipping a file
+
+LOG_LEVEL = logging.DEBUG
+LOG_FORMAT = "%(asctime)s %(name)-12s %(levelname)-8s %(message)s"
 
 CONTENT_REGEX = re.compile(r"/bbcswebdav/.*")
 COURSE_REGEX = re.compile(
@@ -17,6 +21,3 @@ COURSE_REGEX = re.compile(
 FOLDER_REGEX = re.compile(
     r"\/webapps\/blackboard\/content\/listContent.jsp\?course_id=[^&]*&content_id=[^&]*"
 )
-
-LOG_LEVEL = logging.DEBUG
-LOG_FORMAT = "%(asctime)s %(name)-12s %(levelname)-8s %(message)s"
