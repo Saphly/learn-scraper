@@ -5,6 +5,9 @@ USERNAME = ""
 PASSWORD = ""
 DOWNLOAD_DIR = "/path/to/directory"
 
+USE_CACHE = True
+CACHE_DIR = "/path/to/directory"
+
 CONTENT_REGEX = re.compile(r"/bbcswebdav/.*")
 COURSE_REGEX = re.compile(
     r"\/webapps\/blackboard\/execute\/launcher\?type=Course&id=[^&]*&url=[^&]*"

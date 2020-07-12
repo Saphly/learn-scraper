@@ -11,6 +11,7 @@ pylint = "*"
 requests = "*"
 bs4 = "*"
 lxml = "*"
+grequests = "*"
 
 [requires]
 python_version = "3.8"

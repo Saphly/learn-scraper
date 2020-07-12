@@ -1,7 +1,7 @@
 # Project specific
 config.py
 .vscode/
-contents/
+cache/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
