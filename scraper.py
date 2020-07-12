@@ -255,7 +255,8 @@ def main():
             len(ls.folder_infos),
             len(course_urls),
         )
-        ls.save()
+        if config.USE_CACHE:
+            ls.save()
 
     for idx, (dir_path, rel_url) in enumerate(ls.content_infos, 1):
         if not idx % 50:
