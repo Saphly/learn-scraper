@@ -187,25 +187,26 @@ class LearnScraper:
         # keep track of links + paths that we have visited
         self.folder_infos[res_url] = breadcrumbs
 
+        if contents := res.find_all("a", href=config.CONTENT_REGEX):
+            rel_dir_path = "/".join(breadcrumbs)
+            os.makedirs(f"{config.DOWNLOAD_DIR}/{rel_dir_path}", exist_ok=True)
+
+        for content in contents:
+            # all hrefs are supposed to be relative, but some aren't ¯\_(ツ)_/¯
+            rel_content_url = content.get("href").replace(self.learn_url, "")
+            abs_content_url = f"{self.learn_url}{rel_content_url})"
+            self.content_infos[abs_content_url] = rel_dir_path
+
         for folder in res.find_all("a", href=config.FOLDER_REGEX):
             # all hrefs are supposed to be relative, but some aren't ¯\_(ツ)_/¯
             href = folder.get("href").replace(self.learn_url, "")
             rel_folder_url = config.FOLDER_REGEX.match(href).group(0)
             abs_folder_url = f"{self.learn_url}{rel_folder_url}"
 
-            contents = res.find_all("a", href=config.CONTENT_REGEX)
-            if contents:
-                rel_dir_path = "/".join(breadcrumbs)
-                os.makedirs(f"{config.DOWNLOAD_DIR}/{rel_dir_path}", exist_ok=True)
-                for content in contents:
-                    rel_content_url = content.get("href").replace(self.learn_url, "")
-                    abs_content_url = f"{self.learn_url}{rel_content_url})"
-                    self.content_infos[abs_content_url] = rel_dir_path
-
             if any(abs_folder_url == url for url in self.folder_infos):
                 continue
-            else:
-                self.get_content_infos(abs_folder_url)
+
+            self.get_content_infos(abs_folder_url)
 
     def download_one(self, dir_path, rel_url):
         """Downloads a specified file and saves it to the specified directory.
@@ -280,7 +281,7 @@ def main():
     ):
         ls.save_cache()
 
-    ls.download_all()
+    # ls.download_all()
 
 
 if __name__ == "__main__":
