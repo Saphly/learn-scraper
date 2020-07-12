@@ -7,6 +7,7 @@ import requests
 import urllib.parse
 
 from bs4 import BeautifulSoup
+from pprint import pprint as pp
 
 import config
 
@@ -23,8 +24,32 @@ class LearnScraper:
         self.session = requests.Session()
         self.learn_url = "https://www.learn.ed.ac.uk"
         self.ease_url = "https://www.ease.ed.ac.uk"
-        self.content_infos = set()
-        self.folder_infos = set()
+        self.content_infos = dict()
+        self.folder_infos = dict()
+        self.downloaded = 0
+
+    def _callback_factory(self, req_url):
+        def _callback(r, **kwargs):
+            if r.status_code != 200:
+                return
+
+            # save downloaded file
+            fname = urllib.parse.unquote(r.url.split("/")[-1])
+            rel_dir_path = f"{self.content_infos[req_url]}/{fname}"
+            abs_dir_path = f"{config.DOWNLOAD_DIR}/{rel_dir_path}"
+
+            logger.debug(f"Downloading {rel_dir_path}")
+            with open(abs_dir_path, "wb") as handler:
+                handler.write(r.content)
+
+            self.downloaded += 1
+            if not self.downloaded % 10 or self.downloaded == len(self.content_infos):
+                logger.info("Progress: %s/%s", self.downloaded, len(self.content_infos))
+
+        return _callback
+
+    def _exception_handler(self, r, exception):
+        logger.warning("%s when trying to access %s - skipping...", exception, r.url)
 
     def _send_request(
         self, url, method="GET", raise_on_error=True, is_soup=True, **kwargs
@@ -157,31 +182,30 @@ class LearnScraper:
             .find_all("span", id=re.compile(r"crumb_\d+"))
         )
         breadcrumbs = tuple(b.string.strip() for b in breadcrumbs)
-        logger.debug("Currently in %s", "/".join(breadcrumbs))
+        logger.info("Currently in %s", "/".join(breadcrumbs))
 
         # keep track of links + paths that we have visited
-        self.folder_infos.add((breadcrumbs, res_url))
+        self.folder_infos[res_url] = breadcrumbs
 
         for folder in res.find_all("a", href=config.FOLDER_REGEX):
             # all hrefs are supposed to be relative, but some aren't ¯\_(ツ)_/¯
             href = folder.get("href").replace(self.learn_url, "")
-            rel_url = config.FOLDER_REGEX.match(href).group(0)
-            abs_url = f"{self.learn_url}{rel_url}"
+            rel_folder_url = config.FOLDER_REGEX.match(href).group(0)
+            abs_folder_url = f"{self.learn_url}{rel_folder_url}"
 
             contents = res.find_all("a", href=config.CONTENT_REGEX)
             if contents:
-                dir_path = f"{config.DOWNLOAD_DIR}/contents/{'/'.join(breadcrumbs)}"
-                os.makedirs(dir_path, exist_ok=True)
-                # all hrefs are supposed to be relative, but some aren't ¯\_(ツ)_/¯
-                self.content_infos.update(
-                    (dir_path, content.get("href").replace(self.learn_url, ""))
-                    for content in contents
-                )
+                rel_dir_path = "/".join(breadcrumbs)
+                os.makedirs(f"{config.DOWNLOAD_DIR}/{rel_dir_path}", exist_ok=True)
+                for content in contents:
+                    rel_content_url = content.get("href").replace(self.learn_url, "")
+                    abs_content_url = f"{self.learn_url}{rel_content_url})"
+                    self.content_infos[abs_content_url] = rel_dir_path
 
-            if any(abs_url in info for info in self.folder_infos):
+            if any(abs_folder_url == url for url in self.folder_infos):
                 continue
             else:
-                self.get_content_infos(abs_url)
+                self.get_content_infos(abs_folder_url)
 
     def download_one(self, dir_path, rel_url):
         """Downloads a specified file and saves it to the specified directory.
@@ -199,24 +223,19 @@ class LearnScraper:
     def download_all(self):
         """Download all files found in `self.content_infos` in a multi-threaded fashion.
         """
-        exception_handler = lambda r, e: logger.warning(
-            "%s when trying to access %s - skipping...", e, r.url
-        )
-        content_infos = {
-            f"{self.learn_url}{rel_url}": dir_path
-            for dir_path, rel_url in self.content_infos
-        }
-        reqs = [grequests.get(url) for url in content_infos]
+        reqs = [
+            grequests.get(
+                url,
+                session=self.session,
+                timeout=config.TIMEOUT,
+                callback=self._callback_factory(url),
+            )
+            for url in self.content_infos
+        ]
 
-        rs = [r for r in grequests.imap(reqs, exception_handler=exception_handler) if r]
-        for r in rs:
-            req_url = r.history[0].url if r.history else r.url
-            fname = urllib.parse.unquote(r.url.split("/")[-1])
-            dir_path = content_infos[req_url]
-            with open(f"{dir_path}/{fname}", "wb") as handler:
-                handler.write(r.content)
+        list(grequests.imap(reqs, exception_handler=self._exception_handler, size=8))
 
-    def save(self):
+    def save_cache(self):
         """Saves file url and directory path metadata to a cache.
         """
         os.makedirs(config.CACHE_DIR, exist_ok=True)
@@ -225,7 +244,7 @@ class LearnScraper:
             pickle.dump(self.content_infos, handle, protocol=pickle.HIGHEST_PROTOCOL)
         logger.info("Saved content_infos.")
 
-    def load(self):
+    def load_cache(self):
         """Loads file url and directory path from cache.
         """
         logger.info("Loading content_infos...")
@@ -241,7 +260,7 @@ def main():
     res = ls.login(config.USERNAME, config.PASSWORD)
 
     if config.USE_CACHE and os.path.exists(f"{config.CACHE_DIR}/content_infos.pickle"):
-        ls.load()
+        ls.load_cache()
         logger.info(
             "Found %s files to download from cache.", len(ls.content_infos),
         )
@@ -255,13 +274,13 @@ def main():
             len(ls.folder_infos),
             len(course_urls),
         )
-        if config.USE_CACHE:
-            ls.save()
 
-    for idx, (dir_path, rel_url) in enumerate(ls.content_infos, 1):
-        if not idx % 50:
-            logger.info("Progress: %s/%s", idx, len(ls.content_infos))
-        ls.download_one(dir_path, rel_url)
+    if config.USE_CACHE and not os.path.exists(
+        f"{config.CACHE_DIR}/content_infos.pickle"
+    ):
+        ls.save_cache()
+
+    ls.download_all()
 
 
 if __name__ == "__main__":
