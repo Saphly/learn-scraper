@@ -20,15 +20,15 @@ Download all files from all courses enrolled as a student in [Learn](https://www
 
 * Login to [Learn](https://www.learn.ed.ac.uk) via your browser.
 
-* Click on the `Manage Course List` button, as shown below: 
+* Click on the `Manage Course List` button, as shown below:  
 
 ![Manage Course List button on Learn](docs/manage_course_list.png)
 
-* Under the `TERMS` tab, tick all `Select All/Unselect All` checkboxes, as shown below:
+* Under the `TERMS` tab, tick all `Select All/Unselect All` checkboxes, as shown below:  
 
 ![Ticking all Select All/Unselect All checkboxes](docs/select_all_terms.png)`
 
-* Scroll down to the `Courses in which you are enrolled` tab, and tick *at least* one checkbox for each course whose materials you wish to bulk download. For example:
+* Scroll down to the `Courses in which you are enrolled` tab, and tick *at least* one checkbox for each course whose materials you wish to bulk download. For example:  
 
 ![Ticking at least one checkbox per course](docs/enrolled_courses.png)
 
@@ -38,7 +38,7 @@ Download all files from all courses enrolled as a student in [Learn](https://www
 
 ## Result
 
-* Files are saved to `DOWNLOAD_DIR` following the folder structure in each course page (see below):
+* Files are saved to `DOWNLOAD_DIR` following the folder structure in each course page (see below):  
 
 ![Script respects and retains the folder structure in each course page](docs/script_output.png)
 
