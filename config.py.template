@@ -1,13 +1,15 @@
 import re
 import logging
 
+from pathlib import Path
+
 USERNAME = ""
 PASSWORD = ""
 
-DOWNLOAD_DIR = "/absolute/path/to/directory" # No trailing slash
+DOWNLOAD_DIR = Path("/absolute/path/to/directory") 
 
 USE_CACHE = True
-CACHE_DIR = "/absolute/path/to/directory" # No trailing slash
+CACHE_DIR = Path(__file__).resolve().with_name("cache")
 
 TIMEOUT = 60 # how long to wait (in secs) before skipping a file
 
