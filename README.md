@@ -34,7 +34,7 @@ Download all files from all courses enrolled as a student in [Learn](https://www
 
 * Click the `Submit` button on the bottom-right corner to finalise your changes.
 
-* `cd` into the repo (if you're not there already), and run the following command: ```python scraper.py```.
+* `cd` into the repo (if you're not there already), activate the virtual environment (by running ```pipenv shell```) and run the following command: ```python scraper.py```
 
 ## Result
 
@@ -51,3 +51,16 @@ Download all files from all courses enrolled as a student in [Learn](https://www
 ### `command not found: pipenv`
 
 * ```pip install --user pipenv``` installs `pipenv` under `$HOME/.local/bin` by default, so make sure this is in your `$PATH`. See [here](https://opensource.com/article/17/6/set-path-linux) for more details.
+
+### `pkg_resources.DistributionNotFound`
+
+* Delete `Pipfile.lock`: ```rm Pipfile.lock```
+
+* Delete the installed virtual environment by running the following command: ```pipenv --rm```
+
+* Rerun ```pipenv install```, activate it once finished (```pipenv shell```) and then run the script: ```python scraper.py```
+
+### `NotADirectoryError`
+
+* This is most likely because a folder or file name contains [reserved characters](https://en.wikipedia.org/wiki/Filename#Reserved_characters_and_words). This should now be fixed.
+
