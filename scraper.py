@@ -99,7 +99,8 @@ class LearnScraper:
             bs4.BeautifulSoup : course module tab XML data.
         """
         res = self._send_request(
-            f"{self.learn_url}/auth-saml/saml/login", params={"apId": "_175_1"}
+            urllib.parse.urljoin(self.learn_url, "/auth-saml/saml/login"),
+            params={"apId": "_175_1"},
         )
         redir_url = res.find("form").get("action")
         saml_token = res.find("input").get("value")
@@ -111,13 +112,17 @@ class LearnScraper:
         data = {"login": username}
         for key in ["ref", "service", "submit"]:
             data[key] = res.find(id=key).get("value")
-        res = self._send_request(f"{self.ease_url}{rel_url}", method="POST", data=data)
+        res = self._send_request(
+            urllib.parse.urljoin(self.ease_url, rel_url), method="POST", data=data
+        )
 
         rel_url = res.find("form", class_="clearfix").get("action")
         data = {"password": password}
         for key in ["login", "ref", "service", "submit"]:
             data[key] = res.find(id=key).get("value")
-        res = self._send_request(f"{self.ease_url}{rel_url}", method="POST", data=data)
+        res = self._send_request(
+            urllib.parse.urljoin(self.ease_url, rel_url), method="POST", data=data
+        )
 
         redir_url = res.find("form").get("action")
         saml_token = res.find("input").get("value")
@@ -133,7 +138,9 @@ class LearnScraper:
             "tab_tab_group_id": "_171_1",
         }
         res = self._send_request(
-            f"{self.learn_url}/webapps/portal/execute/tabs/tabAction",
+            urllib.parse.urljoin(
+                self.learn_url, "/webapps/portal/execute/tabs/tabAction"
+            ),
             method="POST",
             data=data,
         )
