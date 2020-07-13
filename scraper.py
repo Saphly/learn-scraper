@@ -36,6 +36,7 @@ class LearnScraper:
 
             # save downloaded file
             fname = urllib.parse.unquote(r.url.split("/")[-1])
+            fname = self._get_windows_compatible(fname)
             rel_dir_path = Path(self.content_infos[req_url]) / fname
             abs_dir_path = Path(config.DOWNLOAD_DIR) / rel_dir_path
 
@@ -51,6 +52,21 @@ class LearnScraper:
 
     def _exception_handler(self, r, exception):
         logger.warning("%s when trying to access %s - skipping...", exception, r.url)
+
+    def _get_windows_compatible(self, word):
+        """Sanitise input to make it compatible with Windows naming system,
+           i.e. where the characters (\ / : * ? " < > |) are not allowed.
+
+        Args:
+            word (str): word to be sanitised.
+
+        Returns:
+            str: windows compatible word.
+        """  
+        if os.name == "nt":
+            return "".join(c for c in word if c not in r'\/:*?"<>|')
+        
+        return word
 
     def _send_request(
         self, url, method="GET", raise_on_error=True, is_soup=True, **kwargs
@@ -192,7 +208,9 @@ class LearnScraper:
             .find("ol", class_="clearfix")
             .find_all("span", id=re.compile(r"crumb_\d+"))
         )
-        rel_dir_path = "/".join(b.string.strip() for b in breadcrumbs)
+        rel_dir_path = "/".join(
+            self._get_windows_compatible(b.string.strip()) for b in breadcrumbs
+        )
         logger.info("Currently in %s", rel_dir_path)
 
         if contents := res.find_all("a", href=config.CONTENT_REGEX):
