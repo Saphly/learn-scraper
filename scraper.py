@@ -7,6 +7,7 @@ import requests
 import urllib.parse
 
 from bs4 import BeautifulSoup
+from pathlib import Path
 
 import config
 
@@ -21,10 +22,11 @@ logger.setLevel(config.LOG_LEVEL)
 class LearnScraper:
     def __init__(self):
         self.session = requests.Session()
+        self.cache_name = config.CACHE_DIR / "content_infos.pickle"
         self.learn_url = "https://www.learn.ed.ac.uk"
         self.ease_url = "https://www.ease.ed.ac.uk"
         self.content_infos = dict()
-        self.folder_infos = dict()
+        self.folder_urls = set()
         self.downloaded = 0
 
     def _callback_factory(self, req_url):
@@ -34,8 +36,8 @@ class LearnScraper:
 
             # save downloaded file
             fname = urllib.parse.unquote(r.url.split("/")[-1])
-            rel_dir_path = f"{self.content_infos[req_url]}/{fname}"
-            abs_dir_path = f"{config.DOWNLOAD_DIR}/{rel_dir_path}"
+            rel_dir_path = Path(self.content_infos[req_url]) / fname
+            abs_dir_path = Path(config.DOWNLOAD_DIR) / rel_dir_path
 
             logger.debug(f"Downloading {rel_dir_path}")
             with open(abs_dir_path, "wb") as handler:
@@ -168,41 +170,39 @@ class LearnScraper:
         """Recursively traverse through the given url to find all file urls and keeps track of the path taken to said file.
 
         Args:
-            url (str): course page url.
+            url (str): course page / folder url.
         """
         logger.debug("Visiting %s", url)
 
         r = self._send_request(url, is_soup=False, raise_on_error=False)
         res_url, res = r.url, BeautifulSoup(r.text, "lxml")
 
+        # keep track of urls that we have visited
+        self.folder_urls.add(res_url)
+
         breadcrumbs = (
             res.find(id="breadcrumbs")
             .find("ol", class_="clearfix")
             .find_all("span", id=re.compile(r"crumb_\d+"))
         )
-        breadcrumbs = tuple(b.string.strip() for b in breadcrumbs)
-        logger.info("Currently in %s", "/".join(breadcrumbs))
-
-        # keep track of links + paths that we have visited
-        self.folder_infos[res_url] = breadcrumbs
+        rel_dir_path = "/".join(b.string.strip() for b in breadcrumbs)
+        logger.info("Currently in %s", rel_dir_path)
 
         if contents := res.find_all("a", href=config.CONTENT_REGEX):
-            rel_dir_path = "/".join(breadcrumbs)
-            os.makedirs(f"{config.DOWNLOAD_DIR}/{rel_dir_path}", exist_ok=True)
+            os.makedirs(config.DOWNLOAD_DIR / rel_dir_path, exist_ok=True)
 
         for content in contents:
-            # all hrefs are supposed to be relative, but some aren't ¯\_(ツ)_/¯
-            rel_content_url = content.get("href").replace(self.learn_url, "")
-            abs_content_url = f"{self.learn_url}{rel_content_url})"
+            rel_content_url = content.get("href")
+            abs_content_url = urllib.parse.urljoin(self.learn_url, rel_content_url)
             self.content_infos[abs_content_url] = rel_dir_path
 
         for folder in res.find_all("a", href=config.FOLDER_REGEX):
             # all hrefs are supposed to be relative, but some aren't ¯\_(ツ)_/¯
             href = folder.get("href").replace(self.learn_url, "")
             rel_folder_url = config.FOLDER_REGEX.match(href).group(0)
-            abs_folder_url = f"{self.learn_url}{rel_folder_url}"
+            abs_folder_url = urllib.parse.urljoin(self.learn_url, rel_folder_url)
 
-            if any(abs_folder_url == url for url in self.folder_infos):
+            if abs_folder_url in self.folder_urls:
                 continue
 
             self.get_content_infos(abs_folder_url)
@@ -214,10 +214,10 @@ class LearnScraper:
             dir_path (str): directory to save the downloaded file to.
             rel_url (str): relative URL where the file can be downloaded from.
         """
-        content_url = f"{self.learn_url}{rel_url}"
+        content_url = urllib.parse.urljoin(self.learn_url, rel_url)
         if r := self._send_request(content_url, is_soup=False, raise_on_error=False):
             fname = urllib.parse.unquote(r.url.split("/")[-1])
-            with open(f"{dir_path}/{fname}", "wb") as handler:
+            with open(Path(dir_path) / fname, "wb") as handler:
                 handler.write(r.content)
 
     def download_all(self):
@@ -240,7 +240,7 @@ class LearnScraper:
         """
         os.makedirs(config.CACHE_DIR, exist_ok=True)
         logger.info("Saving content_infos...")
-        with open(f"{config.CACHE_DIR}/content_infos.pickle", "wb") as handle:
+        with open(self.cache_name, "wb") as handle:
             pickle.dump(self.content_infos, handle, protocol=pickle.HIGHEST_PROTOCOL)
         logger.info("Saved content_infos.")
 
@@ -248,7 +248,7 @@ class LearnScraper:
         """Loads file url and directory path from cache.
         """
         logger.info("Loading content_infos...")
-        with open(f"{config.CACHE_DIR}/content_infos.pickle", "rb") as handle:
+        with open(self.cache_name, "rb") as handle:
             self.content_infos = pickle.load(handle)
         logger.info("Loaded content_infos.")
 
@@ -259,7 +259,7 @@ def main():
     ls = LearnScraper()
     res = ls.login(config.USERNAME, config.PASSWORD)
 
-    if config.USE_CACHE and os.path.exists(f"{config.CACHE_DIR}/content_infos.pickle"):
+    if config.USE_CACHE and os.path.exists(ls.cache_name):
         ls.load_cache()
         logger.info(
             "Found %s files to download from cache.", len(ls.content_infos),
@@ -271,13 +271,11 @@ def main():
         logger.info(
             "Found %s files by visiting %s folders from %s courses.",
             len(ls.content_infos),
-            len(ls.folder_infos),
+            len(ls.folder_urls),
             len(course_urls),
         )
 
-    if config.USE_CACHE and not os.path.exists(
-        f"{config.CACHE_DIR}/content_infos.pickle"
-    ):
+    if config.USE_CACHE and not os.path.exists(ls.cache_name):
         ls.save_cache()
 
     ls.download_all()
