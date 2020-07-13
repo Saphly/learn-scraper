@@ -2,7 +2,7 @@
 
 Download all files from all courses enrolled as a student in [Learn](https://www.learn.ed.ac.uk). Requires [Python 3.8.x](https://www.python.org/downloads/).
 
-# Installation
+## Installation
 
 * Clone this repo.
 
@@ -10,13 +10,13 @@ Download all files from all courses enrolled as a student in [Learn](https://www
 
 * `cd` into the repo, and run the following command: ```pipenv install```
 
-# Configuration
+## Configuration
 
 * Copy `config.py.template` and rename it as `config.py`: ```cp config.py.template config.py```
 
 * Replace placeholder values in `config.py` with user-specific ones.
 
-# Usage
+## Usage
 
 * Login to [Learn](https://www.learn.ed.ac.uk) via your browser.
 
@@ -36,12 +36,18 @@ Download all files from all courses enrolled as a student in [Learn](https://www
 
 * `cd` into the repo (if you're not there already), and run the following command: ```python scraper.py```.
 
-# Troubleshooting
+## Result
 
-## `ModuleNotFoundError`
+* Files are saved to `DOWNLOAD_DIR` following the folder structure in each course page (see below):
+
+![Script respects and retains the folder structure in each course page](docs/script_output.png)
+
+## Troubleshooting
+
+### `ModuleNotFoundError`
 
 * If the above command doesn't work, try ```pipenv run python scraper.py``` instead.
 
-## `command not found: pipenv`
+### `command not found: pipenv`
 
 * ```pip install --user pipenv``` installs `pipenv` under `$HOME/.local/bin` by default, so make sure this is in your `$PATH`. See [here](https://opensource.com/article/17/6/set-path-linux) for more details.
