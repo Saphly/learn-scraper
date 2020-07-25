@@ -6,7 +6,7 @@ from pathlib import Path
 USERNAME = ""
 PASSWORD = ""
 
-DOWNLOAD_DIR = Path("/absolute/path/to/directory") 
+DOWNLOAD_DIR = Path(r"/absolute/path/to/directory") 
 
 USE_CACHE = True
 CACHE_DIR = Path(__file__).resolve().with_name("cache")
