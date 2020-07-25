@@ -52,15 +52,13 @@ class LearnScraper:
     def _exception_handler(self, r, exception):
         logger.warning("%s when trying to access %s - skipping...", exception, r.url)
 
-    def _send_request(
-        self, url, method="GET", raise_on_error=True, is_soup=True, **kwargs
-    ):
+    def _send_request(self, url, method="GET", silent=False, is_soup=True, **kwargs):
         """Wrapper for requests HTTP methods with error handling and optional bs4 conversion.
 
         Args:
             url (str): URL to send HTTP request to.
             method (str, optional): HTTP request method. Defaults to "GET".
-            raise_on_error (bool, optional): logs a warning to console instead of raising if False. Defaults to True.
+            silent (bool, optional): logs a warning to console instead of raising if True. Defaults to False.
             is_soup (bool, optional): whether to soupify the HTTP response text. Defaults to True.
 
         Raises:
@@ -77,10 +75,10 @@ class LearnScraper:
             else:
                 raise NotImplementedError(f"Invalid method: {method}")
         except requests.exceptions.RequestException as e:
-            if raise_on_error:
-                logger.exception("%s when trying to access %s.", e, url)
-            else:
+            if silent:
                 logger.warning("%s when trying to access %s - skipping...", e, url)
+            else:
+                logger.exception("%s when trying to access %s.", e, url)
             return None
 
         if is_soup:
@@ -181,7 +179,7 @@ class LearnScraper:
         """
         logger.debug("Visiting %s", url)
 
-        r = self._send_request(url, is_soup=False, raise_on_error=False)
+        r = self._send_request(url, is_soup=False, silent=True)
         res_url, res = r.url, BeautifulSoup(r.text, "lxml")
 
         # keep track of urls that we have visited
@@ -222,7 +220,7 @@ class LearnScraper:
             rel_url (str): relative URL where the file can be downloaded from.
         """
         content_url = urllib.parse.urljoin(self.learn_url, rel_url)
-        if r := self._send_request(content_url, is_soup=False, raise_on_error=False):
+        if r := self._send_request(content_url, is_soup=False, silent=True):
             fname = urllib.parse.unquote(r.url.split("/")[-1])
             with open(Path(dir_path) / fname, "wb") as handler:
                 handler.write(r.content)
